@@ -45,6 +45,8 @@ def get_tasks(query_params: dict):
     tasks = []
     for task in cursor:
         task["_id"] = str(task["_id"])
+        if "created_at" in task and isinstance(task["created_at"], datetime):
+            task["created_at"] = task["created_at"].isoformat()
         tasks.append(task)
 
     return {
@@ -129,7 +131,12 @@ def get_task_by_id(task_id: str):
             "body": json.dumps({"error": "Task not found"})
         }
 
-    task["_id"] = str(task["_id"])
+    task["id"] = str(task["_id"])
+    del task["_id"]
+
+    if "created_at" in task and isinstance(task["created_at"], datetime):
+        task["created_at"] = task["created_at"].isoformat()
+
     return {
         "statusCode": 200,
         "body": json.dumps(task)
