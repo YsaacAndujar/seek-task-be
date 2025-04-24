@@ -46,6 +46,10 @@ functions:
           path: tasks/{id}
           method: delete
           cors: true
+      - http:
+          path: tasks/stats
+          method: get
+          cors: true
 
 plugins:
   - serverless-python-requirements

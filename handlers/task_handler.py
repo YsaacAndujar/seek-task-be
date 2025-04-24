@@ -1,12 +1,15 @@
 import json
 from modules.task.functions import (
     create_task,
+    get_task_stats,
     get_tasks,
     get_task_by_id,
     update_task,
     delete_task
 )
+from utils.token import require_auth
 
+@require_auth
 def handler(event, context):
     path = event.get("path") or ""
     method = event.get("httpMethod")
@@ -16,7 +19,9 @@ def handler(event, context):
 
     if path == "/tasks" and method == "POST":
         return create_task(body)
-
+    elif path == "/tasks/stats" and method == "GET":
+        return get_task_stats()
+    
     elif path == "/tasks" and method == "GET":
         return get_tasks(query_params)
 

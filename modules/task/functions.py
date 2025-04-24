@@ -2,7 +2,8 @@ from db.db import get_database
 from datetime import datetime
 from bson.objectid import ObjectId
 import json
-
+from collections import defaultdict
+from bson import json_util
 from modules.task.models import validate_task
 
 def create_task(body: dict):
@@ -60,6 +61,26 @@ def get_tasks(query_params: dict):
                 "total_pages": (total + limit - 1) // limit
             }
         })
+    }
+
+def get_task_stats():
+    db = get_database()
+    tasks_collection = db["tasks"]
+
+    status_counts = defaultdict(int)
+
+    for task in tasks_collection.find({}, {"status": 1}):
+        status = task.get("status", "todo") 
+        status_counts[status] += 1
+
+    stats = [{"status": status, "count": count} for status, count in status_counts.items()]
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps(stats, default=json_util.default),
+        "headers": {
+            "Content-Type": "application/json"
+        }
     }
 
 def delete_task(task_id: str):
