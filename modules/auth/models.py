@@ -1,10 +1,10 @@
-from pydantic import EmailStr, BaseModel, field_validator
+from pydantic import EmailStr, BaseModel, Field, field_validator
 from datetime import datetime
 
 class UserModel(BaseModel):
     email: EmailStr
     password: str
-    created_at: datetime = datetime.now()
+    created_at: datetime = Field(default_factory=datetime.now)
 
     @field_validator("password")
     def validate_password(cls, value):
