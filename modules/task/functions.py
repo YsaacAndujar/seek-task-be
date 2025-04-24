@@ -7,6 +7,7 @@ from bson import json_util
 from modules.task.models import validate_task
 
 def create_task(body: dict):
+    # Validate incoming task data
     valid, result = validate_task(body)
     if not valid:
         return {
@@ -17,6 +18,7 @@ def create_task(body: dict):
     db = get_database()
     tasks = db["tasks"]
 
+    # Insert validated task into the database
     result = tasks.insert_one(result)
     return {
         "statusCode": 201,
@@ -31,6 +33,7 @@ def get_tasks(query_params: dict):
     tasks_collection = db["tasks"]
 
     try:
+        # Handle pagination parameters
         page = int(query_params.get("page", 1))
         limit = int(query_params.get("limit", 10))
         skip = (page - 1) * limit
@@ -67,10 +70,10 @@ def get_task_stats():
     db = get_database()
     tasks_collection = db["tasks"]
 
+    # Aggregate task count by status
     status_counts = defaultdict(int)
-
     for task in tasks_collection.find({}, {"status": 1}):
-        status = task.get("status", "todo") 
+        status = task.get("status", "todo")
         status_counts[status] += 1
 
     stats = [{"status": status, "count": count} for status, count in status_counts.items()]
@@ -120,6 +123,7 @@ def update_task(task_id: str, body: dict):
             "body": json.dumps({"error": "Invalid task ID"})
         }
 
+    # Update task document with new data
     result = tasks.update_one({"_id": obj_id}, {"$set": body})
 
     if result.matched_count == 0:
@@ -152,6 +156,7 @@ def get_task_by_id(task_id: str):
             "body": json.dumps({"error": "Task not found"})
         }
 
+    # Clean up and format response
     task["id"] = str(task["_id"])
     del task["_id"]
 

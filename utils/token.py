@@ -2,11 +2,11 @@ import json
 import jwt
 import os
 from datetime import datetime, timedelta
-from functools import wraps
 from http import HTTPStatus
 
 JWT_ALGORITHM = "HS256"
 
+# Generates a JWT access token with a 30-day expiration
 def create_access_token(data: dict) -> str:
     JWT_SECRET = os.environ.get("JWT_SECRET")
     payload = data.copy()
@@ -14,14 +14,17 @@ def create_access_token(data: dict) -> str:
     payload["exp"] = expire
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+# Decodes and verifies a JWT access token
 def decode_access_token(token: str) -> dict:
     JWT_SECRET = os.environ.get("JWT_SECRET")
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
+# Decorator to enforce authentication via JWT in handler functions
 def require_auth(func):
     def wrapper(event, context):
         method = event.get("httpMethod")
 
+        # Allow CORS preflight through
         if method == "OPTIONS":
             return func(event, context)
 
@@ -40,6 +43,7 @@ def require_auth(func):
         token = auth_header.split(" ")[1]
 
         try:
+            # Validate token and attach user data to event
             user = decode_access_token(token)
             event["user"] = user 
         except Exception as e:
