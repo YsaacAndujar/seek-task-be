@@ -1,3 +1,4 @@
+import json
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -18,21 +19,29 @@ def decode_access_token(token: str) -> dict:
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
 def require_auth(func):
-    @wraps(func)
     def wrapper(event, context):
-        headers = event.get("headers", {})
+        method = event.get("httpMethod")
+
+        if method == "OPTIONS":
+            return func(event, context)
+
+        headers = event.get("headers") or {}
         auth_header = headers.get("Authorization")
 
         if not auth_header or not auth_header.startswith("Bearer "):
             return {
-                "statusCode": HTTPStatus.UNAUTHORIZED,
-                "body": "Missing or invalid Authorization header"
+                "statusCode": 401,
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({"message": "Unauthorized: No token provided"})
             }
 
         token = auth_header.split(" ")[1]
+
         try:
             user = decode_access_token(token)
-            event["user"] = user  # Pasamos el usuario decodificado al handler
+            event["user"] = user 
         except Exception as e:
             return {
                 "statusCode": HTTPStatus.UNAUTHORIZED,
@@ -40,4 +49,5 @@ def require_auth(func):
             }
 
         return func(event, context)
+
     return wrapper

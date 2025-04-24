@@ -19,8 +19,16 @@ functions:
           method: post
           cors: true
       - http:
+          path: auth/register
+          method: options
+          cors: true
+      - http:
           path: auth/login
           method: post
+          cors: true
+      - http:
+          path: auth/login
+          method: options
           cors: true
 
   tasks:
@@ -35,6 +43,10 @@ functions:
           method: get
           cors: true
       - http:
+          path: tasks
+          method: options
+          cors: true
+      - http:
           path: tasks/{id}
           method: get
           cors: true
@@ -47,8 +59,16 @@ functions:
           method: delete
           cors: true
       - http:
+          path: tasks/{id}
+          method: options
+          cors: true
+      - http:
           path: tasks/stats
           method: get
+          cors: true
+      - http:
+          path: tasks/stats
+          method: options
           cors: true
 
 plugins:
@@ -63,4 +83,3 @@ package:
     - "!tests/**"
     - "!*.pyc"
     - "!*.pyo"
-
