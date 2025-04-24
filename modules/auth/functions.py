@@ -1,0 +1,57 @@
+import json
+from db.db import get_database
+from modules.auth.models import UserModel
+from utils.hash import hash_password, verify_password
+from datetime import datetime
+
+from utils.token import create_access_token
+
+def register_user(body: dict):
+    try:
+        data = UserModel(**body)
+    except Exception as e:
+        return {
+            "statusCode": 400,
+            "body": f"Validation error: {str(e)}"
+        }
+
+    db = get_database()
+    users = db["users"]
+
+    if users.find_one({"email": data.email}):
+        return {
+            "statusCode": 400,
+            "body": "Email is already registered"
+        }
+
+    hashed_password = hash_password(data.password)
+    users.insert_one({
+        "email": data.email,
+        "password": hashed_password,
+        "created_at": data.created_at or datetime.utcnow()
+    })
+
+    return {
+        "statusCode": 201,
+        "body": "User registered successfully"
+    }
+
+def login_user(body: dict):
+    db = get_database()
+    users = db["users"]
+
+    email = body.get("email")
+    password = body.get("password")
+
+    if not email or not password:
+        return {"statusCode": 400, "body": json.dumps({"error": "Email and password are required"})}
+
+    user = users.find_one({"email": email})
+    if not user or not verify_password(password, user["password"]):
+        return {"statusCode": 401, "body": json.dumps({"error": "Invalid credentials"})}
+    token = create_access_token({"user_id": str(user["_id"])})
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({"token": token})
+    }
