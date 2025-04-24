@@ -3,21 +3,20 @@ from datetime import datetime
 from bson.objectid import ObjectId
 import json
 
-from modules.task.models import TaskModel
+from modules.task.models import validate_task
 
 def create_task(body: dict):
-    try:
-        task = TaskModel(**body)
-    except Exception as e:
+    valid, result = validate_task(body)
+    if not valid:
         return {
             "statusCode": 400,
-            "body": json.dumps({"error": f"Validation error: {str(e)}"})
+            "body": json.dumps({"error": result})
         }
 
     db = get_database()
     tasks = db["tasks"]
 
-    result = tasks.insert_one(task.dict())
+    result = tasks.insert_one(result)
     return {
         "statusCode": 201,
         "body": json.dumps({
@@ -130,7 +129,7 @@ def get_task_by_id(task_id: str):
             "body": json.dumps({"error": "Task not found"})
         }
 
-    task["_id"] = str(task["_id"])  # Convertir ObjectId a string
+    task["_id"] = str(task["_id"])
     return {
         "statusCode": 200,
         "body": json.dumps(task)

@@ -1,19 +1,62 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: ysaac
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: seek-task
-# "service" is the name of this project. This will also be added to your AWS resource names.
 service: seek-task
 
 provider:
   name: aws
-  runtime: python3.10
+  runtime: python3.11
+  region: us-east-1
+  environment:
+    MONGO_URI: ${env:MONGO_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
 
 functions:
-  hello:
-    handler: handler.hello
+  auth:
+    handler: handlers/auth_handler.handler
     events:
-      - httpApi:
-          path: /
+      - http:
+          path: auth/register
+          method: post
+          cors: true
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+
+  tasks:
+    handler: handlers/task_handler.handler
+    events:
+      - http:
+          path: tasks
+          method: post
+          cors: true
+      - http:
+          path: tasks
           method: get
+          cors: true
+      - http:
+          path: tasks/{id}
+          method: get
+          cors: true
+      - http:
+          path: tasks/{id}
+          method: put
+          cors: true
+      - http:
+          path: tasks/{id}
+          method: delete
+          cors: true
+
+plugins:
+  - serverless-python-requirements
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+package:
+  individually: true
+  patterns:
+    - "!**/__pycache__/**"
+    - "!tests/**"
+    - "!*.pyc"
+    - "!*.pyo"
 

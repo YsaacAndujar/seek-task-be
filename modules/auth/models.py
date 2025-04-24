@@ -1,15 +1,36 @@
-from pydantic import EmailStr, BaseModel, Field, field_validator
+from cerberus import Validator
 from datetime import datetime
+import re
 
-class UserModel(BaseModel):
-    email: EmailStr
-    password: str
-    created_at: datetime = Field(default_factory=datetime.now)
+# Define el esquema Cerberus
+user_schema = {
+    "email": {
+        "type": "string",
+        "required": True,
+        "regex": r"^[^@]+@[^@]+\.[^@]+$"
+    },
+    "password": {
+        "type": "string",
+        "required": True,
+        "minlength": 6,
+        "check_with": "not_empty"
+    },
+    "created_at": {
+        "type": "datetime",
+        "required": False,
+        "default_setter": lambda doc: datetime.now()
+    }
+}
 
-    @field_validator("password")
-    def validate_password(cls, value):
+# Agrega una función de validación personalizada
+class CustomValidator(Validator):
+    def _check_with_not_empty(self, field, value):
         if not value.strip():
-            raise ValueError("Password is required")
-        if len(value) < 6:
-            raise ValueError("Password should have at least ")
-        return value
+            self._error(field, "Password cannot be empty")
+
+# Función para usar la validación
+def validate_user(data: dict):
+    v = CustomValidator(user_schema)
+    if not v.validate(data):
+        return False, v.errors
+    return True, v.document

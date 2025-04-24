@@ -1,34 +1,34 @@
 import json
 from db.db import get_database
-from modules.auth.models import UserModel
+from modules.auth.models import validate_user
 from utils.hash import hash_password, verify_password
 from datetime import datetime
 
 from utils.token import create_access_token
 
 def register_user(body: dict):
-    try:
-        data = UserModel(**body)
-    except Exception as e:
+    valid, result = validate_user(body)
+
+    if not valid:
         return {
             "statusCode": 400,
-            "body": f"Validation error: {str(e)}"
+            "body": f"Validation error: {str(result)}"
         }
 
     db = get_database()
     users = db["users"]
 
-    if users.find_one({"email": data.email}):
+    if users.find_one({"email": result["email"]}):
         return {
             "statusCode": 400,
             "body": "Email is already registered"
         }
 
-    hashed_password = hash_password(data.password)
+    hashed_password = hash_password(result["password"])
     users.insert_one({
-        "email": data.email,
+        "email": result["email"],
         "password": hashed_password,
-        "created_at": data.created_at or datetime.utcnow()
+        "created_at": result.get("created_at", datetime.utcnow())
     })
 
     return {
